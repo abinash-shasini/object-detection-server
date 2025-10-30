@@ -5,6 +5,9 @@ import io
 import numpy as np
 import logging
 import base64
+import sys
+import os
+import traceback
 
 # Load YOLOv8 model via ultralytics
 YOLOv8 = None
@@ -28,16 +31,19 @@ app.add_middleware(
 # Load YOLOv8 model (optional). We load in a try/except so the server starts if ultralytics not installed.
 yolo_model = None
 yolo_model_loaded = False
+
 if YOLOv8 is None:
-    logging.info('ultralytics not installed; YOLO endpoint will be unavailable')
+    logging.warning('ultralytics not installed; YOLO endpoint will be unavailable')
 else:
     try:
-        # change to 'yolov8s.pt', 'yolov8m.pt', 'yolov8l.pt', or 'yolov8x.pt' for higher accuracy
+        logging.info('Attempting to load YOLOv8 model...')
+        # Use yolov8n.pt for faster deployment and less memory usage on free hosting
         yolo_model = YOLOv8('yolov8n.pt')
         yolo_model_loaded = True
-        logging.info('YOLOv8 model loaded')
+        logging.info('YOLOv8 model loaded successfully')
     except Exception as e:
-        logging.error(f'Failed to load YOLO model: {e}')
+        logging.error(f'Failed to load YOLO model: {str(e)}')
+        logging.error(f'Full traceback: {traceback.format_exc()}')
         yolo_model = None
         yolo_model_loaded = False
 
@@ -48,7 +54,25 @@ def home():
 
 @app.get("/health")
 def health():
-    return {"Model loading status": yolo_model_loaded}
+    return {"yolo_model_loaded": yolo_model_loaded}
+
+
+@app.get("/debug")
+def debug_info():
+    """Debug endpoint to troubleshoot deployment issues"""
+    return {
+        "python_version": sys.version,
+        "python_executable": sys.executable,
+        "ultralytics_available": YOLOv8 is not None,
+        "yolo_model_loaded": yolo_model_loaded,
+        "working_directory": os.getcwd(),
+        "environment": {
+            "PATH": os.environ.get("PATH", ""),
+            "PYTHON_PATH": os.environ.get("PYTHONPATH", ""),
+            "PORT": os.environ.get("PORT", "8000"),
+        },
+        "installed_packages": "Check logs for pip list output"
+    }
 
 @app.post("/detect")
 async def detect_yolo(image: UploadFile = File(...), crop: bool = False, min_score: float = 0.7):
