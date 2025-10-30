@@ -33,7 +33,7 @@ if YOLOv8 is None:
 else:
     try:
         # change to 'yolov8s.pt', 'yolov8m.pt', 'yolov8l.pt', or 'yolov8x.pt' for higher accuracy
-        yolo_model = YOLOv8('yolov8x.pt')
+        yolo_model = YOLOv8('yolov8n.pt')
         yolo_model_loaded = True
         logging.info('YOLOv8 model loaded')
     except Exception as e:
