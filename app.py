@@ -5,15 +5,14 @@ import io
 import numpy as np
 import logging
 import base64
-from typing import List
 
 # Load YOLOv8 model via ultralytics
-YOLO = None
+YOLOv8 = None
 try:
-    from ultralytics import YOLO as _YOLO
-    YOLO = _YOLO
+    from ultralytics import YOLO
+    YOLOv8 = YOLO
 except Exception:
-    YOLO = None
+    YOLOv8 = None
 
 app = FastAPI()
 
@@ -29,13 +28,12 @@ app.add_middleware(
 # Load YOLOv8 model (optional). We load in a try/except so the server starts if ultralytics not installed.
 yolo_model = None
 yolo_model_loaded = False
-if YOLO is None:
+if YOLOv8 is None:
     logging.info('ultralytics not installed; YOLO endpoint will be unavailable')
 else:
     try:
-        # using yolov8n for fast inference and smaller size (good for free hosting)
         # change to 'yolov8s.pt', 'yolov8m.pt', 'yolov8l.pt', or 'yolov8x.pt' for higher accuracy
-        yolo_model = YOLO('yolov8n.pt')
+        yolo_model = YOLOv8('yolov8x.pt')
         yolo_model_loaded = True
         logging.info('YOLOv8 model loaded')
     except Exception as e:
@@ -50,7 +48,7 @@ def home():
 
 @app.get("/health")
 def health():
-    return {"yolo_model_loaded": yolo_model_loaded}
+    return {"Model loading status": yolo_model_loaded}
 
 @app.post("/detect")
 async def detect_yolo(image: UploadFile = File(...), crop: bool = False, min_score: float = 0.7):

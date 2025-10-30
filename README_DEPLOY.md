@@ -1,3 +1,4 @@
+git push -u origin master
 # Object Detection API
 
 FastAPI server with YOLOv8 object detection.
